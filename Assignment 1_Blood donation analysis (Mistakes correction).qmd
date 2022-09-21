@@ -1,0 +1,197 @@
+---
+title: "Assignment - Lesson 2"
+format: html
+editor: visual
+---
+
+## Team
+
+---
+Writer: Bruno Santana
+Corrector: Jonah Cabayé
+---
+
+## Mistakes documentation
+
+---
+Line 50 -> url variable starting with a capital letter
+Line 77 -> Head function calling data frame without ()
+Line 104 -> renaming categories comparing a vector of 5 with a vector of 2
+Line 121 -> Calling ctnDiag variable instead of cntDiag2
+Line 156 -> Close function key
+
+To improve the model you can add visualization like that : library(psych)
+pairs.panels(cleanDF_n, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+---
+
+## Model purpose
+
+---
+This model objective is to analyze the dataset about people blood characteristics and define if that person is apt or not to do a blood donation. If the model identifies the person with some kind of disease, she is classified as "Not apt to donate blood". Otherwise, she will be classified as "Apt to donate blood".
+---
+
+## Setup - Instaling package
+
+```{r}
+#install.packages(tidyverse)
+#install.packages(class)
+#install.packages(caret)
+library(tidyverse)
+library(class)
+library(caret)
+```
+
+## Read data
+
+#### Error 1
+
+```{r}
+#url1 <- "https://raw.githubusercontent.com/HAN-M3DM-Data-Mining/assignments/master/datasets/KNN-hcvdat0.csv"
+#rawDF1 <- read_csv(Url1)
+```
+
+#### Corrected :
+
+```{r}
+url <- "https://raw.githubusercontent.com/HAN-M3DM-Data-Mining/assignments/master/datasets/KNN-hcvdat0.csv"
+rawDF <- read_csv(url)
+```
+
+## Data Understanding
+
+```{r}
+str(rawDF)
+```
+
+## Data preparation
+
+```{r}
+# Randomizing order of the dataset
+cleanDF <- rawDF[sample(1:nrow(rawDF)),]
+```
+
+#### Error 2
+
+```{r}
+#Excluding the column first column because it is not a valuable variable for the model
+#cleanDF <- cleanDF[-1]
+#head cleanDF  #head(cleanDF)
+```
+
+#### corrected :
+
+```{r}
+cleanDF <- cleanDF[-1]
+head(cleanDF) 
+```
+
+## Data understanding: proportion between categories
+
+```{r}
+cntDiag <- table(cleanDF$Category)
+propCat <- round(prop.table(cntDiag) * 100 , digits = 1)
+
+cntDiag
+propCat
+```
+
+## Renaming categories
+
+#### Error 3
+
+```{r}
+#cleanDF$Category <- factor(cleanDF$Category, levels = c("0=Blood Donor", "0s=suspect Blood Donor", "1=Hepatitis", "2=Fibrosis", "3=Cirrhosis"), labels = c("Apt to donate blood", "Not apt to donate blood")) %>% relevel("Not apt to donate blood")
+#head(cleanDF, 10)
+#there is a vector of 5 with a vector of 2
+```
+
+#### corrected :
+
+```{r}
+cleanDF$Category <- factor(cleanDF$Category, levels = c("0=Blood Donor", "0s=suspect Blood Donor", "1=Hepatitis", "2=Fibrosis", "3=Cirrhosis"), labels = c("Apt to donate blood", "Not apt to donate blood","Not apt to donate blood","Not apt to donate blood","Not apt to donate blood")) %>% relevel("Not apt to donate blood")
+head(cleanDF, 10)
+```
+
+## Data understanding: proportion between categories (after renaming)
+
+#### Error 4
+
+```{r}
+cntDiag2 <- table(cleanDF$Category)
+propCat2 <- round(prop.table(cntDiag2) * 100 , digits = 1)
+
+#cntDiag  #cntDiag instead of cntDiag2
+propCat2
+```
+
+#### corrected :
+
+```{r}
+cntDiag2 <- table(cleanDF$Category)
+propCat2 <- round(prop.table(cntDiag2) * 100 , digits = 1)
+
+cntDiag2  #cntDiag instead of cntDiag2
+propCat2
+```
+
+## Analyzing variables
+
+```{r}
+summary(cleanDF[c("ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT", "PROT")])
+```
+
+##Replacing missing values
+
+```{r}
+cleanDF[is.na(cleanDF)] <- 0
+summary(cleanDF[c("ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT", "PROT")])
+```
+
+## Normalizing variables
+
+#### Error 5
+
+```{r}
+#normalize <- function(x) {
+#  return ((x - min(x)) / (max(x) - min(x))) #} missing
+```
+
+#### corrected :
+
+```{r}
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))}
+```
+
+```{r}
+nCols <- dim(cleanDF)[2]
+cleanDF_n <- sapply(4:nCols,
+                    function(x) {
+  normalize(cleanDF[,x])
+}) %>% as.data.frame()
+
+summary(cleanDF_n[c("ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT", "PROT")])
+```
+
+## Training and evaluating the model
+
+```{r}
+trainDF_feat <- cleanDF_n[1:515,  ]
+testDF_feat <- cleanDF_n[516:615,  ]
+
+trainDF_labels <- cleanDF[1:515,  1]
+testDF_labels <- cleanDF[516:615,  1]
+```
+
+```{r}
+cleanDF_test_pred <- knn(train = as.matrix(trainDF_feat), test = as.matrix(testDF_feat), cl = as.matrix(trainDF_labels), k = 21)
+head(cleanDF_test_pred)
+```
+
+```{r}
+confusionMatrix(cleanDF_test_pred, testDF_labels[[1]], positive = NULL, dnn = c("Prediction", "True"))
+```
